@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
-axum = { version = "0.7.6", features = ["multipart"] }
-brother_ql = { version = "1.0.5", features = ["serde"] }
+axum = { version = "0.8.7", features = ["multipart"] }
+brother_ql = { version = "2.0.1", features = ["serde"] }
 image = "0.25.2"
 log = "0.4.22"
 serde = { version = "1.0.210", features = ["derive"] }

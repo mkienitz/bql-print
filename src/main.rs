@@ -40,7 +40,7 @@ where
 
 #[derive(Deserialize, Debug)]
 struct PrintJobSettings {
-    no_pages: Option<u8>,
+    copies: Option<u8>,
     media: brother_ql::media::Media,
     high_dpi: Option<bool>,
     compressed: Option<bool>,
@@ -68,20 +68,25 @@ async fn handler(State(state): State<AppState>, mut multipart: Multipart) -> Res
     }
 
     if let (Some(image), Some(settings)) = (image, settings) {
-        let print_job = brother_ql::printjob::PrintJob {
-            no_pages: settings.no_pages.unwrap_or(1),
-            image,
-            media: settings.media,
-            high_dpi: settings.high_dpi.unwrap_or(false),
-            compressed: settings.compressed.unwrap_or(false),
-            quality_priority: settings.quality_priority.unwrap_or(true),
-            cut_behaviour: settings
-                .cut_behavior
-                .unwrap_or(brother_ql::printjob::CutBehavior::CutAtEnd),
-        }
-        .compile()?;
+        let print_job = brother_ql::printjob::PrintJobBuilder::new(settings.media)
+            .add_label(image)
+            .copies(settings.copies.unwrap_or(1))
+            .high_dpi(settings.high_dpi.unwrap_or(false))
+            .compressed(settings.compressed.unwrap_or(false))
+            .quality_priority(settings.quality_priority.unwrap_or(true))
+            .cut_behavior(
+                settings
+                    .cut_behavior
+                    .unwrap_or(brother_ql::printjob::CutBehavior::CutAtEnd),
+            )
+            .build()?
+            .compile();
 
-        info!("Submitting print job with size {}B and {:?}", print_job.len(), settings);
+        info!(
+            "Submitting print job with size {}B and {:?}",
+            print_job.len(),
+            settings
+        );
         let mut stream = TcpStream::connect(state.printer_address).await?;
         stream.write_all(&print_job).await?;
 
